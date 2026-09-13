@@ -30,7 +30,7 @@ jobs:
           unzip -q "$ZIP_FILE" -d .project_extract
 
           echo "Extracted project:"
-          find .project_extract -maxdepth 3 -type f | sort
+          find .project_extract -maxdepth 6 -type f | sort
 
           shopt -s dotglob
           cp -a .project_extract/. .
@@ -50,8 +50,33 @@ jobs:
       - name: Build Debug APK
         run: gradle assembleDebug --stacktrace
 
+      - name: Create source archive
+        shell: bash
+        run: |
+          set -e
+
+          rm -rf /tmp/madarsa_source
+          mkdir -p /tmp/madarsa_source
+
+          cp -a . /tmp/madarsa_source/project
+
+          rm -rf /tmp/madarsa_source/project/.git
+          rm -rf /tmp/madarsa_source/project/.gradle
+          rm -rf /tmp/madarsa_source/project/app/build
+
+          cd /tmp/madarsa_source
+
+          zip -qr /tmp/madarsa-source-project.zip project \
+            -x "project/MadarsaApp_Supabase_Connected.zip"
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: madarsa-debug-apk
           path: "**/build/outputs/apk/debug/*.apk"
+
+      - name: Upload Android source
+        uses: actions/upload-artifact@v4
+        with:
+          name: madarsa-source-project
+          path: /tmp/madarsa-source-project.zip
